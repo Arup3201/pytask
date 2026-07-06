@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey, String, Engine
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
-from internal.dcs.dataclasses import TaskData
+from internal.dataclasses import TaskData
 from .base import Base, TimestampMixin
 
 if TYPE_CHECKING:

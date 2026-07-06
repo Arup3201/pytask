@@ -1,6 +1,7 @@
 import uuid
 from typing import Protocol
-from internal.dcs.dataclasses import TaskData
+from internal.dataclasses import TaskData
+from internal.exceptions import InvalidTaskInput, DatabaseError
 
 # Structural subtyping 
 # https://realpython.com/python-interface/#defining-a-protocol-based-interface
@@ -9,15 +10,6 @@ class TaskStoreProtocol(Protocol):
                id: str, user_id: str, title: str, description: str, 
                is_completed: bool) -> TaskData:
         ...
-
-class InvalidTaskInput(Exception):
-    def __init__(self, property: str):
-        self.message = f"Task {property} is invalid"
-
-class DatabaseError(Exception):
-    def __init__(self, error: Exception):
-        self.message = f"Database operation failed."
-        self.error = error
 
 class TaskService:
     def __init__(self, task_store: TaskStoreProtocol):

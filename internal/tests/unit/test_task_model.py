@@ -1,5 +1,5 @@
 from internal.models.task import TaskService, TaskStoreProtocol, DatabaseError, InvalidTaskInput
-from internal.dcs.dataclasses import TaskData
+from internal.dataclasses import TaskData
 from datetime import datetime
 from dataclasses import dataclass
 import pytest
