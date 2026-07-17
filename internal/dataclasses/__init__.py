@@ -10,3 +10,8 @@ class TaskData:
     is_completed: bool
     created_at: datetime
     updated_at: datetime
+
+@dataclass
+class JWTClaim:
+    sub: str
+    email: str

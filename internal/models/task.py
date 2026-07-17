@@ -8,8 +8,8 @@ from internal.exceptions import InvalidTaskInput, DatabaseError
 class TaskStoreProtocol(Protocol):
     def create(self, 
                id: str, user_id: str, title: str, description: str, 
-               is_completed: bool) -> TaskData:
-        ...
+               is_completed: bool) -> None: ...
+    def get(self, id: str) -> TaskData: ...
 
 class TaskService:
     def __init__(self, task_store: TaskStoreProtocol):
@@ -25,7 +25,8 @@ class TaskService:
         task_id = str(uuid.uuid4())
 
         try:
-            task = self.task_store.create(task_id, user_id, title, description, False)
+            self.task_store.create(task_id, user_id, title, description, False)
+            task = self.task_store.get(task_id)
         except Exception as e:
             raise DatabaseError(e)
         else:

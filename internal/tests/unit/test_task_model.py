@@ -1,8 +1,10 @@
 from internal.models.task import TaskService, TaskStoreProtocol, DatabaseError, InvalidTaskInput
 from internal.dataclasses import TaskData
+from internal.exceptions import NotFound
 from datetime import datetime
 from dataclasses import dataclass
 import pytest
+from typing import List
 
 @dataclass
 class CreateTaskData:
@@ -12,20 +14,32 @@ class CreateTaskData:
     store: TaskStoreProtocol
     raises_db_exception: bool = False
 
+tasks: List[TaskData] = []
+
 class MockStore:
     def create(self, id: str, user_id: str,  title: str, description: str, 
-               is_completed: bool) -> TaskData:
-        return TaskData(id=id, 
+               is_completed: bool) -> None:
+        tasks.append(TaskData(id=id, 
                         user_id=user_id,
                         title=title, 
                         description=description, 
                         is_completed=is_completed, 
                         created_at=datetime.now(), 
-                        updated_at=datetime.now())
+                        updated_at=datetime.now()))
+    
+    def get(self, id: str) -> TaskData:
+        for t in tasks:
+            if t.id == id:
+                return t
+        
+        raise NotFound("Task "+id)
 
 class FaultyMockStore:
     def create(self, id: str, user_id: str,  title: str, description: str, 
-               is_completed: bool) -> TaskData:
+               is_completed: bool) -> None:
+        raise Exception("Faulty mock store.")
+
+    def get(self, id: str) -> TaskData:
         raise Exception("Faulty mock store.")
 
 @pytest.mark.parametrize(

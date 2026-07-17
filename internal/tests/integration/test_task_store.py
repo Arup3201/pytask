@@ -35,21 +35,14 @@ def get_engine(request: FixtureRequest) -> Engine:
 def test_TaskStore_create(get_engine: Engine):
     store = TaskStore(get_engine)
     id = str(uuid4())
-    task = store.create(id, "test-user", "test task", "test description", False)
-
-    assert task.id == id
-    assert task.user_id == "test-user"
-    assert task.title == "test task"
-    assert task.description == "test description"
-    assert task.is_completed == False
+    store.create(id, "test-user", "test task", "test description", False)
 
     with Session(get_engine) as session:
-        with session.begin():
-            saved_task = session.get(Task, id)
-            
-            assert saved_task != None
-            assert saved_task.id == id
-            assert saved_task.user_id == "test-user"
-            assert saved_task.title == "test task"
-            assert saved_task.description == "test description"
-            assert saved_task.is_completed == False
+        task = session.get(Task, id)
+
+        assert task is not None    
+        assert task.id == id
+        assert task.user_id == "test-user"
+        assert task.title == "test task"
+        assert task.description == "test description"
+        assert task.is_completed == False

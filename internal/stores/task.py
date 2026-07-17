@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey, String, Engine
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 from internal.dataclasses import TaskData
+from internal.exceptions import NotFound
 from .base import Base, TimestampMixin
 
 if TYPE_CHECKING:
@@ -26,18 +27,30 @@ class TaskStore:
 
     def create(self, 
                id: str, user_id: str, title: str, description: str, 
-               is_completed: bool) -> TaskData:
+               is_completed: bool) -> None:
 
         with Session(self.engine) as session:
-            with session.begin():
+            try:
                 task = Task(id=id, 
                     user_id=user_id, 
                     title=title, 
                     description=description, 
                     is_completed=is_completed)
                 session.add(task)
-        
-                return TaskData(
+                session.commit()
+            except:
+                session.rollback()
+                raise
+
+    def get(self, id: str) -> TaskData:
+
+        with Session(self.engine) as session:
+            task = session.get(Task, id)
+            
+            if task is None:
+                raise NotFound("Task "+id)
+            
+            return TaskData(
                     id=task.id,
                     user_id=task.user_id,
                     title=task.title,
@@ -46,4 +59,3 @@ class TaskStore:
                     created_at=task.created_at,
                     updated_at=task.updated_at,
                 )
-
