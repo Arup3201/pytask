@@ -52,7 +52,8 @@ def get_token() -> str:
 def test_TaskController_create(monkeypatch, 
                                get_client: TestClient, 
                                get_token: str, 
-                               get_engine: Engine):
+                               get_engine: Engine # just to start postgres engine
+                               ):
     monkeypatch.setattr(DatabaseConfig, "get_url", postgres.get_connection_url)
 
     response: Response = get_client.post(
@@ -76,3 +77,4 @@ def test_TaskController_create(monkeypatch,
 
     assert body["title"] == "Test task"
     assert body["description"] == "Test description"
+
