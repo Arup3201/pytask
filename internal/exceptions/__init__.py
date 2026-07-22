@@ -1,3 +1,11 @@
+class InvalidUserInput(Exception):
+    def __init__(self, property: str):
+        self.message = f"User {property} is invalid"
+
+class DuplicateUserEmail(Exception):
+    def __init__(self, email: str):
+        self.message = f"Email {email} already exists"
+
 class InvalidTaskInput(Exception):
     def __init__(self, property: str):
         self.message = f"Task {property} is invalid"

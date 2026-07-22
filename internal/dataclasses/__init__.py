@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 @dataclass
@@ -15,3 +15,12 @@ class TaskData:
 class JWTClaim:
     sub: str
     email: str
+
+@dataclass
+class UserData:
+    id: str
+    email: str
+    display_name: str | None
+    password_hash: bytes = field(repr=False)
+    created_at: datetime
+    updated_at: datetime

@@ -1,4 +1,3 @@
-from collections.abc import AsyncGenerator
 from fastapi import Depends
 from sqlalchemy import Engine, create_engine
 from internal.config import DatabaseConfig, JWTConfig
@@ -15,6 +14,12 @@ def get_task_store(engine: Engine = Depends(get_engine)) -> TaskStore:
 
 def get_task_service(task_store: TaskStore = Depends(get_task_store)) -> TaskService:
     return TaskService(task_store)
+
+def get_user_store(engine: Engine = Depends(get_engine)) -> UserStore:
+    return UserStore(engine)
+
+def get_user_service(user_store: UserStore = Depends(get_user_store)) -> UserService:
+    return UserService(user_store)
 
 def get_token_util() -> TokenUtil:
     return TokenUtil(JWTConfig.Secret, JWTConfig.Algorithm)
