@@ -6,10 +6,7 @@ from internal.dataclasses import UserData
 from internal.dependencies import get_user_service, get_token_util
 from internal.utils import TokenUtil
 from internal.exceptions import InvalidUserInput, DatabaseError, TokenVerificationError
-
-class UserServiceProtocol(Protocol):
-    def create(self, email: str, display_name: str, password: str) -> UserData: ...
-    def get_user_by_email_password(self, email: str, password: str) -> UserData: ...
+from internal.models.user import UserService
 
 class RegisterRequest(BaseModel):
     display_name: str
@@ -52,7 +49,7 @@ class AuthController:
 
     def register(self, 
                user: RegisterRequest, 
-               user_service: Annotated[UserServiceProtocol, Depends(get_user_service)]):
+               user_service: Annotated[UserService, Depends(get_user_service)]):
         try:
             created_user = user_service.create(user.email, user.display_name, user.password)
         except InvalidUserInput as e:
@@ -78,7 +75,7 @@ class AuthController:
 
     def login(self, 
               payload: LoginRequest, 
-              user_service: Annotated[UserServiceProtocol, Depends(get_user_service)], 
+              user_service: Annotated[UserService, Depends(get_user_service)], 
               token_util: TokenUtil = Depends(get_token_util)):
         try:
             user = user_service.get_user_by_email_password(payload.email, payload.password)

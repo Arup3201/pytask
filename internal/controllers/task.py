@@ -4,13 +4,8 @@ from typing import Protocol
 from datetime import datetime
 from internal.dependencies import get_task_service
 from internal.middlewares.auth import get_current_user_id
-from internal.dataclasses import TaskData
 from internal.exceptions import InvalidTaskInput, DatabaseError
-
-class TaskServiceProtocol(Protocol):
-    def create(self, user_id: str, title: str, description: str) -> TaskData:
-        ...
-
+from internal.models.task import TaskService
 
 class CreateTaskRequest(BaseModel):
     title: str
@@ -43,7 +38,7 @@ class TaskController:
     def create(self, 
                task: CreateTaskRequest, 
                current_user_id: str = Depends(get_current_user_id),
-               task_service: TaskServiceProtocol = Depends(get_task_service)
+               task_service: TaskService = Depends(get_task_service)
         ):
         try:
             created_task = task_service.create(current_user_id, task.title, task.description)

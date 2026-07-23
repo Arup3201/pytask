@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey, String, Engine
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
+from internal.dataclasses import TaskData
 from internal.dataclasses import TaskData
 from internal.exceptions import NotFound
 from .base import Base, TimestampMixin
@@ -21,7 +23,15 @@ class Task(Base, TimestampMixin):
 
     user: Mapped["User"] = relationship(back_populates="tasks")
 
-class TaskStore:
+class TaskStore(ABC):
+    @abstractmethod
+    def create(self, 
+               id: str, user_id: str, title: str, description: str, 
+               is_completed: bool) -> None: ...
+    @abstractmethod
+    def get(self, id: str) -> TaskData: ...
+
+class SQLAlchemyTaskStorage(TaskStore):
     def __init__(self, engine: Engine):
         self.engine = engine
 

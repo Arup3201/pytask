@@ -2,17 +2,10 @@ import uuid
 from typing import Protocol
 from internal.dataclasses import TaskData
 from internal.exceptions import InvalidTaskInput, DatabaseError
-
-# Structural subtyping 
-# https://realpython.com/python-interface/#defining-a-protocol-based-interface
-class TaskStoreProtocol(Protocol):
-    def create(self, 
-               id: str, user_id: str, title: str, description: str, 
-               is_completed: bool) -> None: ...
-    def get(self, id: str) -> TaskData: ...
+from internal.stores.task import TaskStore
 
 class TaskService:
-    def __init__(self, task_store: TaskStoreProtocol):
+    def __init__(self, task_store: TaskStore):
         self.task_store = task_store
 
     def create(self, user_id: str, title: str, description: str) -> TaskData:

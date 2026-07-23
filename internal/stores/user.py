@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 from sqlalchemy import Engine, select
 from sqlalchemy.exc import IntegrityError
 from typing import Optional, List
-from .base import Base, TimestampMixin
 from internal.dataclasses import UserData
 from internal.exceptions import NotFound, DuplicateUserEmail
+from internal.dataclasses import UserData
+from .base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from .task import Task
@@ -22,7 +24,18 @@ class User(Base, TimestampMixin):
 
     tasks: Mapped[List["Task"]] = relationship(back_populates="user")
 
-class UserStore:
+class UserStore(ABC):
+    @abstractmethod
+    def create(self, 
+               id: str, email: str, display_name: str, 
+               password_hash: bytes) -> None: ...
+    @abstractmethod
+    def get(self, id: str) -> UserData: ...
+    @abstractmethod
+    def get_by_email(self, email: str) -> UserData: ...
+
+
+class SQLAlchemyUserStorage(UserStore):
     def __init__(self, engine: Engine):
         self.engine = engine
 
@@ -48,6 +61,7 @@ class UserStore:
 
         with Session(self.engine) as session:
 
+
             user = session.get(User, id)
             if user is None:
                 raise NotFound(f"User {id}")
@@ -63,7 +77,7 @@ class UserStore:
 
     def get_by_email(self, email: str) -> UserData:
 
-        stmt = select(User).where(User.email.is_(email))
+        stmt = select(User).where(User.email==email)
         with Session(self.engine) as session:
             user = session.scalar(stmt)
             if user is None:
