@@ -1,5 +1,7 @@
 import jwt
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
+from datetime import datetime, timezone, timedelta
+from typing import Tuple
 from internal.dataclasses import JWTClaim
 from internal.exceptions import TokenVerificationError
 
@@ -8,8 +10,13 @@ class TokenUtil:
         self.secret_key = key
         self.algorithm = alg
 
-    def generate_token(self, user_id: str, email: str) -> str:
-        return jwt.encode({"sub": user_id, "email": email}, self.secret_key, self.algorithm)
+    def generate_token(self, user_id: str, email: str) -> Tuple[str, datetime]:
+        now = datetime.now(tz=timezone.utc)
+        exp = now+timedelta(days=1)
+        payload = JWTClaim(sub= user_id, email= email, iat= now, exp=exp)
+        return jwt.encode(payload.__dict__, 
+                          self.secret_key, 
+                          self.algorithm), exp
     
     def verify_token(self, token: str) -> JWTClaim:
         try:
@@ -25,4 +32,6 @@ class TokenUtil:
                 raise TokenVerificationError("Token has missing field values.")
 
             return JWTClaim(sub=payload["sub"], 
-                            email=payload["email"])
+                            email=payload["email"], 
+                            iat=payload["iat"], 
+                            exp=payload["exp"])

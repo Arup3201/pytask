@@ -1,50 +1,74 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from typing import Protocol
+from typing import Protocol, Annotated
 from datetime import datetime
 from internal.dataclasses import UserData
-from internal.dependencies import get_user_service
-from internal.exceptions import DatabaseError
+from internal.dependencies import get_user_service, get_token_util
+from internal.utils import TokenUtil
+from internal.exceptions import InvalidUserInput, DatabaseError, TokenVerificationError
 
-class CreateUserRequest(BaseModel):
+class UserServiceProtocol(Protocol):
+    def create(self, email: str, display_name: str, password: str) -> UserData: ...
+    def get_user_by_email_password(self, email: str, password: str) -> UserData: ...
+
+class RegisterRequest(BaseModel):
     display_name: str
     email: str
     password: str
 
-class UserServiceProtocol(Protocol):
-    def create(self, display_name: str, email: str, password: str) -> UserData: ...
-
-class CreateUserResponse(BaseModel):
+class RegisterResponse(BaseModel):
     id: str
     email: str
     display_name: str | None
     created_at: datetime
     updated_at: datetime
 
-class UserController:
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class LoginResponse(BaseModel):
+    access_token: str
+    expires_at: datetime
+    user: UserData
+
+class AuthController:
     def __init__(self):
         self.router = APIRouter(
-            prefix="/users",
-            tags=["users"]
+            prefix="/auth",
+            tags=["auth"]
         )
         self.__register_routes()
 
     def __register_routes(self):
-        self.router.add_api_route("", self.create, status_code=status.HTTP_201_CREATED)
+        self.router.add_api_route("/register", 
+                                  self.register, 
+                                  methods=["POST"], 
+                                  status_code=status.HTTP_201_CREATED)
+        self.router.add_api_route("/login", 
+                                  self.login, 
+                                  methods=["POST"], 
+                                  status_code=status.HTTP_200_OK)
 
-    def create(self, 
-               user: CreateUserRequest, 
-               user_service: UserServiceProtocol = Depends(get_user_service)):
+    def register(self, 
+               user: RegisterRequest, 
+               user_service: Annotated[UserServiceProtocol, Depends(get_user_service)]):
         try:
-            created_user = user_service.create(user.display_name, user.email, user.password)
+            created_user = user_service.create(user.email, user.display_name, user.password)
+        except InvalidUserInput as e:
+            print(e)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                                detail="User email/password is invalid.")
         except DatabaseError as e:
             print(e)
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="User create operation failed. Try again.")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                                detail="User create operation failed. Try again.")
         except Exception as e:
             print(e)
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong. We will fix it.")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                                detail="Something went wrong. We are fixing it.")
         else:
-            return CreateUserResponse(
+            return RegisterResponse(
                 id=created_user.id,
                 email=created_user.email,
                 display_name=created_user.display_name,
@@ -52,4 +76,26 @@ class UserController:
                 updated_at=created_user.updated_at,
             )
 
-user_controller = UserController()
+    def login(self, 
+              payload: LoginRequest, 
+              user_service: Annotated[UserServiceProtocol, Depends(get_user_service)], 
+              token_util: TokenUtil = Depends(get_token_util)):
+        try:
+            user = user_service.get_user_by_email_password(payload.email, payload.password)
+            access_token, expires_at = token_util.generate_token(user.id, user.email)
+        except TokenVerificationError as e:
+            print(e)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                                detail="Invalid auth token has been provided.")
+        except DatabaseError as e:
+            print(e)
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                                detail="Database check failed. Please try again.")
+        except Exception as e:
+            print(e)
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                                detail="Something went wrong.  We are fixing it.")
+        else:
+            return LoginResponse(access_token=access_token, expires_at=expires_at, user=user)
+
+auth_controller = AuthController()

@@ -47,7 +47,7 @@ def get_token() -> str:
     JWTConfig.Secret = "secret"
     JWTConfig.Algorithm = "HS256"
 
-    return TokenUtil(JWTConfig.Secret, JWTConfig.Algorithm).generate_token("test-user", "test-user@example.com")
+    return TokenUtil(JWTConfig.Secret, JWTConfig.Algorithm).generate_token("test-user", "test-user@example.com")[0]
 
 def test_TaskController_create(monkeypatch, 
                                get_client: TestClient, 

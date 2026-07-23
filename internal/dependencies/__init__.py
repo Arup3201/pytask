@@ -2,7 +2,9 @@ from fastapi import Depends
 from sqlalchemy import Engine, create_engine
 from internal.config import DatabaseConfig, JWTConfig
 from internal.stores.task import TaskStore
+from internal.stores.user import UserStore
 from internal.models.task import TaskService
+from internal.models.user import UserService
 from internal.utils import TokenUtil
 
 def get_engine() -> Engine:

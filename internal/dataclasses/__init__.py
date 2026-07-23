@@ -15,6 +15,8 @@ class TaskData:
 class JWTClaim:
     sub: str
     email: str
+    iat: datetime
+    exp: datetime
 
 @dataclass
 class UserData:

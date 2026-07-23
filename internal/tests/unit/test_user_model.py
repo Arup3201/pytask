@@ -53,6 +53,8 @@ class FaultyMockStore:
              MockStore(), False, True),
             ("test-user@example.com", "test user", "123", 
              FaultyMockStore(), True, False),
+            ("test@example.com", "test user", "123", 
+                         MockStore(), False, False),
         ]
 )
 def test_UserService_create(email: str, 
