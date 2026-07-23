@@ -17,8 +17,9 @@ class UserServiceProtocol(Protocol):
 class CreateUserResponse(BaseModel):
     id: str
     email: str
-    display_name: str
+    display_name: str | None
     created_at: datetime
+    updated_at: datetime
 
 class UserController:
     def __init__(self):
@@ -48,4 +49,7 @@ class UserController:
                 email=created_user.email,
                 display_name=created_user.display_name,
                 created_at=created_user.created_at,
+                updated_at=created_user.updated_at,
             )
+
+user_controller = UserController()
