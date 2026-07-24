@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List
 from internal.dependencies import get_task_service
 from internal.middlewares.auth import get_current_user_id
-from internal.exceptions import InvalidTaskInput, DatabaseError
+from internal.exceptions import InvalidTaskInput, NotFound, DatabaseError
 from internal.models.task import TaskService
 
 class CreateTaskRequest(BaseModel):
@@ -48,12 +48,15 @@ class TaskController:
         self.router.add_api_route("", 
                                   self.list, 
                                   methods=["GET"], 
-                                  response_model=ListTaskResponse, 
-                                  status_code=status.HTTP_200_OK)
+                                  response_model=ListTaskResponse)
         self.router.add_api_route("/{id}", 
                                   self.update, 
                                   methods=["PATCH"], 
                                   response_model=TaskUpdateResponse)
+        self.router.add_api_route("/{id}", 
+                                  self.delete, 
+                                  methods=["DELETE"], 
+                                  status_code=status.HTTP_204_NO_CONTENT)
         
     def create(self, 
                task: CreateTaskRequest, 
@@ -120,5 +123,17 @@ class TaskController:
                     created_at=task.created_at,
                     updated_at=task.updated_at,
                 ))
+
+    def delete(self, 
+               id: str, 
+               current_user_id: str = Depends(get_current_user_id), 
+               task_service: TaskService = Depends(get_task_service)):
+        try:
+            task_service.delete(id, current_user_id)
+        except NotFound:
+            raise HTTPException(status_code=404, detail="Task not found.")
+        except DatabaseError as e:
+            print(e)
+            raise HTTPException(status_code=500, detail="Operation failed in database. Try again.")
 
 task_controller = TaskController()

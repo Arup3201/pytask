@@ -23,7 +23,7 @@ class InvalidTaskInput(Exception):
         self.message = f"Task {property} is invalid."
         super().__init__(self.message)
 
-class IlligalUpdate(Exception):
+class NotAuthorized(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(self.message)
