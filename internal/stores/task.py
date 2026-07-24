@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
-from sqlalchemy import ForeignKey, String, Engine
+from typing import TYPE_CHECKING, List
+from sqlalchemy import ForeignKey, String, Engine, select
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 from internal.dataclasses import TaskData
 from internal.dataclasses import TaskData
@@ -30,6 +30,9 @@ class TaskStore(ABC):
                is_completed: bool) -> None: ...
     @abstractmethod
     def get(self, id: str) -> TaskData: ...
+
+    @abstractmethod
+    def list(self, user_id: str) -> List[TaskData]: ...
 
 class SQLAlchemyTaskStorage(TaskStore):
     def __init__(self, engine: Engine):
@@ -69,3 +72,22 @@ class SQLAlchemyTaskStorage(TaskStore):
                     created_at=task.created_at,
                     updated_at=task.updated_at,
                 )
+
+    def list(self, user_id: str) -> List[TaskData]:
+
+        with Session(self.engine) as session:
+            stmt = select(Task).where(Task.user_id == user_id)
+            rows = session.execute(stmt).scalars()
+
+            tasks: List[TaskData] = []
+            for r in rows:
+                tasks.append(TaskData(
+                    id=r.id,
+                    user_id=r.user_id,
+                    title=r.title,
+                    description=r.description,
+                    is_completed=r.is_completed,
+                    created_at=r.created_at,
+                    updated_at=r.updated_at,
+                ))
+            return tasks

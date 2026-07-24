@@ -1,5 +1,5 @@
 import uuid
-from typing import Protocol
+from typing import List
 from internal.dataclasses import TaskData
 from internal.exceptions import InvalidTaskInput, DatabaseError
 from internal.stores.task import TaskStore
@@ -24,3 +24,11 @@ class TaskService:
             raise DatabaseError(e)
         else:
             return task
+
+    def list(self, user_id: str) -> List[TaskData]:
+        try:
+            tasks = self.task_store.list(user_id)
+        except Exception as e:
+            raise DatabaseError(e)
+        else:
+            return tasks
