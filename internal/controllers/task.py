@@ -23,6 +23,14 @@ class SingleTaskResponse(BaseModel):
 class ListTaskResponse(BaseModel):
     tasks: List[SingleTaskResponse]
 
+class TaskUpdateRequest(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    is_completed: bool | None = None
+
+class TaskUpdateResponse(BaseModel):
+    task: SingleTaskResponse
+
 class TaskController:
     def __init__(self):
         self.router = APIRouter(
@@ -42,6 +50,10 @@ class TaskController:
                                   methods=["GET"], 
                                   response_model=ListTaskResponse, 
                                   status_code=status.HTTP_200_OK)
+        self.router.add_api_route("/{id}", 
+                                  self.update, 
+                                  methods=["PATCH"], 
+                                  response_model=TaskUpdateResponse)
         
     def create(self, 
                task: CreateTaskRequest, 
@@ -87,5 +99,26 @@ class TaskController:
                     updated_at=t.updated_at,
                 ))
             return ListTaskResponse(tasks=response_tasks)
+
+    def update(self, 
+               id: str,
+               payload: TaskUpdateRequest,
+               current_user_id: str = Depends(get_current_user_id), 
+               task_service: TaskService = Depends(get_task_service)):
+        try:
+            task = task_service.update(id, current_user_id, payload.title, payload.description, payload.is_completed)
+        except DatabaseError as e:
+            print(e)
+            raise HTTPException(status_code=500, detail="Operation failed in database. Try again.")
+        else:
+            return TaskUpdateResponse(task=SingleTaskResponse(
+                    id=task.id,
+                    user_id=task.user_id,
+                    title=task.title,
+                    description=task.description,
+                    is_completed=task.is_completed,
+                    created_at=task.created_at,
+                    updated_at=task.updated_at,
+                ))
 
 task_controller = TaskController()

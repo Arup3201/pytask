@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, List
-from sqlalchemy import ForeignKey, String, Engine, select
+from sqlalchemy import ForeignKey, String, Engine, select, update
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 from internal.dataclasses import TaskData
 from internal.dataclasses import TaskData
@@ -33,6 +33,9 @@ class TaskStore(ABC):
 
     @abstractmethod
     def list(self, user_id: str) -> List[TaskData]: ...
+
+    @abstractmethod
+    def update(self, task: TaskData) -> None: ...
 
 class SQLAlchemyTaskStorage(TaskStore):
     def __init__(self, engine: Engine):
@@ -91,3 +94,18 @@ class SQLAlchemyTaskStorage(TaskStore):
                     updated_at=r.updated_at,
                 ))
             return tasks
+
+    def update(self, task: TaskData) -> None:
+
+        with Session(self.engine) as session:
+            try:
+                stmt = update(Task).where(Task.id == task.id).values(
+                    title=task.title, 
+                    description=task.description, 
+                    is_completed=task.is_completed
+                )
+                session.execute(stmt)
+                session.commit()
+            except:
+                session.rollback()
+                raise

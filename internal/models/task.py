@@ -1,7 +1,7 @@
 import uuid
 from typing import List
 from internal.dataclasses import TaskData
-from internal.exceptions import InvalidTaskInput, DatabaseError
+from internal.exceptions import InvalidTaskInput, IlligalUpdate, DatabaseError
 from internal.stores.task import TaskStore
 
 class TaskService:
@@ -32,3 +32,25 @@ class TaskService:
             raise DatabaseError(e)
         else:
             return tasks
+
+    def update(self, 
+               id: str, user_id: str, 
+               title: str | None, description: str | None, is_completed: bool | None) -> TaskData:
+        task = self.task_store.get(id)
+        if task.user_id != user_id:
+            raise IlligalUpdate("Only task owner can update the task")
+
+        if title:
+            task.title = title
+        if description:
+            task.description = description
+        if is_completed:
+            task.is_completed = is_completed
+
+        try:
+            self.task_store.update(task)
+            updated_task = self.task_store.get(id)
+        except Exception as e:
+            raise DatabaseError(e)
+        else:
+            return updated_task
